@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resonance — EO Guild</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            neon: { cyan:'#38f9ff', blue:'#3ea0ff', violet:'#b06cff', pink:'#ff3df0', lime:'#c6ff4a' },
+            space: { 900:'#050510', 800:'#0a0a1a', 700:'#0f1122' }
+          },
+          fontFamily: {
+            pixel: ['"Press Start 2P"', 'monospace'],
+            ui: ['Outfit', 'system-ui', 'sans-serif']
+          },
+          boxShadow: {
+            neon: '0 0 22px rgba(56,249,255,.45), 0 0 44px rgba(255,61,240,.25)',
+            card: '0 18px 48px rgba(0,0,0,.55), inset 0 0 0 1px rgba(62,160,255,.18)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body::before {
+      content: "";
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(1200px 800px at 12% 18%, rgba(62,160,255,.10), transparent 60%),
+        radial-gradient(1000px 700px at 85% 20%, rgba(176,108,255,.10), transparent 60%),
+        radial-gradient(900px 650px at 50% 90%, rgba(255,61,240,.06), transparent 55%);
+    }
+    .glass { background: linear-gradient(180deg, rgba(10,10,26,.72), rgba(10,10,26,.55)); backdrop-filter: blur(12px) saturate(130%); }
+    .neon-border { box-shadow: inset 0 0 0 1px rgba(62,160,255,.22), 0 0 0 1px rgba(62,160,255,.10), 0 0 24px rgba(62,160,255,.20); }
+    .rule { height:1px; background: linear-gradient(90deg, transparent, rgba(62,160,255,.45), transparent); }
+    .table-grid td, .table-grid th { border-bottom: 1px solid rgba(255,255,255,.08); }
+    .table-grid tr:hover td { background: rgba(255,255,255,.03); }
+    #starfield { position: fixed; inset: 0; z-index: 0; display:block; }
+  </style>
+</head>
+<body class="bg-space-900 text-white font-ui min-h-screen overflow-x-hidden">
+
+  <!-- Config -->
+  <script>
+    const DISCORD_INVITE_URL = "https://discord.gg/Qa2qJ67mQR";
+    const DISCORD_GUILD_ID = "1355317045373435935";
+  </script>
+
+  <!-- Starfield -->
+  <canvas id="starfield"></canvas>
+  <script>
+    (() => {
+      const c = document.getElementById('starfield');
+      const ctx = c.getContext('2d', { alpha: true });
+      let w, h, stars = [], shooting = null;
+      function resize() {
+        w = c.width = window.innerWidth;
+        h = c.height = window.innerHeight;
+        makeStars();
+      }
+      function makeStars() {
+        const density = Math.min(250, Math.floor((w*h) / 8000));
+        stars = Array.from({ length: density }, () => ({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          z: Math.random() * 0.8 + 0.2,
+          a: Math.random() * Math.PI * 2,
+          s: Math.random() * 0.8 + 0.2
+        }));
+      }
+      function spawnShooting() {
+        if (shooting || Math.random() < 0.985) return;
+        const startY = Math.random() * h * 0.5;
+        shooting = {
+          x: w + 150, y: startY,
+          vx: - (5 + Math.random() * 6),
+          vy: 1 + Math.random() * 2,
+          life: 0, max: 140
+        };
+      }
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        for (const star of stars) {
+          star.a += 0.03 + star.z * 0.02;
+          const tw = 0.4 + 0.6 * (0.5 + Math.sin(star.a) * 0.5);
+          const r = star.s * (1.5 + star.z);
+          ctx.globalAlpha = tw * 0.9;
+          const t = star.x / w;
+          const rC = Math.floor(62 + (176-62)*t);
+          const gC = Math.floor(160 + (108-160)*t);
+          const bC = Math.floor(255 + (255-255)*t);
+          const grad = ctx.createRadialGradient(star.x, star.y, 0, star.x, star.y, r*2.2);
+          grad.addColorStop(0, `rgba(${rC},${gC},${bC},0.9)`);
+          grad.addColorStop(1, 'rgba(255,255,255,0.0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, r, 0, Math.PI*2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        spawnShooting();
+        if (shooting) {
+          shooting.life++;
+          shooting.x += shooting.vx;
+          shooting.y += shooting.vy;
+          const trail = ctx.createLinearGradient(shooting.x, shooting.y, shooting.x+150, shooting.y-20);
+          trail.addColorStop(0, 'rgba(255,255,255,0.95)');
+          trail.addColorStop(1, 'rgba(56,249,255,0.0)');
+          ctx.strokeStyle = trail;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(shooting.x, shooting.y);
+          ctx.lineTo(shooting.x+150, shooting.y-20);
+          ctx.stroke();
+          if (shooting.life > shooting.max || shooting.x < -200 || shooting.y > h + 200) shooting = null;
+        }
+        requestAnimationFrame(draw);
+      }
+      window.addEventListener('resize', resize, { passive: true });
+      resize(); draw();
+    })();
+  </script>
+
+  <!-- Navigation -->
+  <nav class="sticky top-0 z-20 backdrop-blur-md bg-space-900/60 border-b border-white/5">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="guild-logo.png" alt="Resonance" class="h-7 w-7" />
+        <span class="font-pixel text-[12px] tracking-widest text-neon-cyan">RESONANCE</span>
+      </div>
+      <div class="hidden sm:flex items-center gap-6 text-sm text-white/80">
+        <a href="#about" class="hover:text-white">About</a>
+        <a href="#values" class="hover:text-white">Values</a>
+        <a href="#guidelines" class="hover:text-white">Guidelines</a>
+        <a href="#discord" class="hover:text-white">Discord</a>
+        <a href="#join" class="hover:text-white">Join</a>
+      </div>
+      <a href="#join" class="px-3 py-2 rounded-xl text-[12px] font-semibold bg-gradient-to-r from-neon-cyan to-neon-violet text-space-900 neon-border shadow-neon">Apply</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <div class="grid lg:grid-cols-2 gap-10 items-center">
+        <div class="order-2 lg:order-1">
+          <h1 class="font-pixel text-[26px] leading-tight text-neon-cyan drop-shadow-[0_0_16px_rgba(56,249,255,.6)]">Welcome to Resonance! ✨</h1>
+          <p class="mt-5 text-white/85 max-w-xl">For the ones who never quite fit, for the voices that were never heard — <span class="text-neon-cyan">Resonance</span> is your echo. Here, you’re not just accepted. You’re amplified.</p>
+          <p class="mt-4 text-white/70 max-w-xl">A fresh EO guild built upon peace — a safe place to grow, create, and vibe together.</p>
+          <div class="mt-7 flex gap-3">
+            <a href="#join" class="px-4 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-neon-cyan to-neon-violet text-space-900 neon-border shadow-neon">Join the Guild</a>
+            <a href="#values" class="px-4 py-3 rounded-xl text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition">Our Values</a>
+          </div>
+        </div>
+        <div class="order-1 lg:order-2 flex justify-center">
+          <div class="glass neon-border shadow-card rounded-2xl p-6 sm:p-8">
+            <img src="guild-logo.png" alt="Resonance Guild Logo" class="w-44 sm:w-56 md:w-64" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- About / Values / Contact -->
+  <main class="relative z-10">
+    <section id="about" class="py-6 sm:py-10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-3 gap-6">
+        <article class="glass neon-border shadow-card rounded-2xl p-6">
+          <h2 class="font-pixel text-[13px] text-neon-cyan">About Resonance</h2>
+          <div class="rule my-4"></div>
+          <p class="text-white/85 text-sm leading-relaxed">Resonance is a calm signal in the noise — a place to enjoy EO without drama. We resolve conflicts privately and respectfully, and we focus on community, creativity, and joy.</p>
+        </article>
+
+        <article id="values" class="glass neon-border shadow-card rounded-2xl p-6">
+          <h2 class="font-pixel text-[13px] text-neon-pink">Our Values</h2>
+          <div class="rule my-4"></div>
+          <ul class="space-y-2 text-sm text-white/85">
+            <li class="flex gap-2"><span>🕊️</span><span>Peace first — empathy over ego.</span></li>
+            <li class="flex gap-2"><span>🔊</span><span>Amplify voices — creators, helpers, and chill grinders.</span></li>
+            <li class="flex gap-2"><span>🌱</span><span>Grow together — learn, share, improve.</span></li>
+          </ul>
+        </article>
+
+        <article class="glass neon-border shadow-card rounded-2xl p-6">
+          <h2 class="font-pixel text-[13px] text-neon-violet">Join / Contact</h2>
+          <div class="rule my-4"></div>
+          <p class="text-sm text-white/85">DM <span class="text-neon-cyan font-semibold">@Resonance</span> in-game or ping us on Discord. New members welcome!</p>
+          <a href="#discord" class="mt-5 inline-block px-4 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-neon-cyan to-neon-violet text-space-900 neon-border shadow-neon">Discord</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- Guidelines -->
+    <section id="guidelines" class="py-6 sm:py-10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="glass neon-border shadow-card rounded-2xl p-6">
+          <h2 class="font-pixel text-[13px] text-neon-lime">Guild Guidelines</h2>
+          <div class="rule my-4"></div>
+          <div class="overflow-x-auto">
+            <table class="w-full table-fixed text-sm table-grid">
+              <thead class="text-white/75">
+                <tr class="text-left">
+                  <th class="w-24 py-2">Icon</th>
+                  <th class="py-2">Guideline</th>
+                  <th class="w-40 py-2">Action</th>
+                </tr>
+              </thead>
+              <tbody class="text-white/90">
+                <tr>
+                  <td class="py-3">✨</td>
+                  <td class="py-3">Use the ignore function to protect your gameplay experience.</td>
+                  <td class="py-3">Open menu → <span class="font-semibold">Ignore</span></td>
+                </tr>
+                <tr>
+                  <td class="py-3">🌙</td>
+                  <td class="py-3">If something feels off, contact me directly rather than engaging in conflict.</td>
+                  <td class="py-3"><span class="font-semibold">DM @Resonance</span></td>
+                </tr>
+                <tr>
+                  <td class="py-3">🤝</td>
+                  <td class="py-3">We seek understanding before judgment and resolution before reaction.</td>
+                  <td class="py-3">Pause → DM → Resolve</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Discord -->
+    <section id="discord" class="py-6 sm:py-12">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-6">
+        <article class="glass neon-border shadow-card rounded-2xl p-6">
+          <h2 class="font-pixel text-[13px] text-neon-blue">Discord — Join Us</h2>
+          <div class="rule my-4"></div>
+          <p class="text-sm text-white/85">Hop into our Discord to chat, share creations, and coordinate in-game.</p>
+          <div class="mt-5 flex flex-wrap gap-3">
+            <a href="https://discord.gg/Qa2qJ67mQR"
+               class="px-4 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-neon-cyan to-neon-violet text-space-900 neon-border shadow-neon inline-flex items-center gap-2"
+               target="_blank" rel="noopener">Join via Invite</a>
+          </div>
+          <p class="mt-3 text-xs text-white/60 break-all">Invite: https://discord.gg/Qa2qJ67mQR</p>
+        </article>
+
+        <article class="glass neon-border shadow-card rounded-2xl p-0 overflow-hidden">
+          <div class="p-6">
+            <h2 class="font-pixel text-[13px] text-neon-pink">Discord — Live Widget</h2>
+            <div class="rule my-4"></div>
+            <p class="text-sm text-white/80">See who’s online and connect instantly.</p>
+          </div>
+          <div class="bg-space-800/60 border-t border-white/10">
+            <iframe src="https://discord.com/widget?id=1355317045373435935&theme=dark"
+                    width="100%" height="500"
+                    allowtransparency="true"
+                    frameborder="0"
+                    sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Apply -->
+    <section id="join" class="py-6 sm:py-12">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="glass neon-border shadow-card rounded-2xl p-6">
+          <h2 class="font-pixel text-[13px] text-neon-blue">Apply to Resonance</h2>
+          <div class="rule my-4"></div>
+          <form class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs text-white/70 mb-2">In-Game Name</label>
+              <input class="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 focus:outline-none focus:border-neon-cyan" placeholder="Your IGN" />
+            </div>
+            <div>
+              <label class="block text-xs text-white/70 mb-2">Preferred Role</label>
+              <select class="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 focus:outline-none focus:border-neon-cyan">
+                <option>Creator</option>
+                <option>Support</option>
+                <option>Vibe / Casual</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs text-white/70 mb-2">Why Resonance?</label>
+              <textarea class="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 min-h-[120px] focus:outline-none focus:border-neon-cyan" placeholder="Share a bit about yourself and what you’re looking for."></textarea>
+            </div>
+            <div class="sm:col-span-2 flex gap-3">
+              <button type="submit" class="px-4 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-neon-cyan to-neon-violet text-space-900 neon-border shadow-neon">Submit</button>
+              <a href="#top" class="px-4 py-3 rounded-xl text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition">Back to top</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="relative z-10 py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-white/60">
+      © 2025 Resonance Guild — Endless Online 
+    </div>
+  </footer>
